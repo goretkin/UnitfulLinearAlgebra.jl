@@ -13,17 +13,17 @@ UXinv = map(inv, UX)
 TX = map(typeof, UX)
 TXdot = map(typeof, UXdot)
 
-taa_UX = TagsAlongAxis{UX}
-taa_UXinv = TagsAlongAxis{UXinv}
-taa_UXdot = TagsAlongAxis{UXdot}
+taa_UX = TagsAlongAxis{UX}()
+taa_UXinv = TagsAlongAxis{UXinv}()
+taa_UXdot = TagsAlongAxis{UXdot}()
 
 @testset "TagsAlongAxis" begin
   @test taa_UX[1] == u"m"
   @test taa_UX[2] == u"m/s"
 end
 
-top1 = TagsOuterProduct{Tuple{taa_UX, }}
-top2 = TagsOuterProduct{Tuple{taa_UXdot, taa_UXinv}}
+top1 = TagsOuterProduct{Tuple{taa_UX, }}()
+top2 = TagsOuterProduct{Tuple{taa_UXdot, taa_UXinv}}()
 
 @testset "TagsOuterProduct" begin
   @test top1[1] == u"m"
@@ -41,5 +41,5 @@ end
 
   t = t2 * t1
   @test t.x == t2.x * t1.x
-  @test get_tag(t) == TagsOuterProduct{Tuple{taa_UXdot}}
+  @test get_tag(t) == TagsOuterProduct{Tuple{taa_UXdot}}()
 end
