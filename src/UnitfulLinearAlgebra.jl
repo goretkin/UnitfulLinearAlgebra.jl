@@ -152,6 +152,7 @@ Tuple_to_tuple(::Type{TUPLE}) where {TUPLE<:Tuple} = tuple(TUPLE.parameters...)
 
 Base.size(t::TaggedTensor) = size(get_tag(t))
 Base.getindex(t::TaggedTensor, ind...) = t.x[ind...] * get_tag(t)[ind...]
+Base.setindex!(t::TaggedTensor, val, ind...) = setindex!(t.x, val / get_tag(t)[ind...], ind...)
 #get_freeunits(quantity::Unitful.Quantity{T, Dim, Unit}) = Unit
 
 

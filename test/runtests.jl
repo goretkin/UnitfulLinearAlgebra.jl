@@ -50,10 +50,22 @@ t2 = TTensor(top2,
   @SArray rand(2,2)
 )
 
+t2_mutable = TTensor(top2,
+  rand(2,2)
+)
+
 @testset "construct TaggedTensor" begin
   t = t2 * t1
   @test t.x == t2.x * t1.x
   @test get_tag(t) == TagsOuterProduct(Tuple{taa_UXdot})
+end
+
+@testset "mutate" begin
+  @test_throws Unitful.DimensionError t2_mutable[1,1] = 1.0
+  t2_mutable[1,1] = 1 * u"s^-1"
+  @test t2_mutable[1,1] == 1 * u"s^-1"
+  t2_mutable[1,1] = 120 * u"minute^-1"
+  @test t2_mutable[1,1] == 2 * u"s^-1"
 end
 
 @testset "adjoint" begin
@@ -84,6 +96,10 @@ Identity_A = TTensor(top3,
 )
 
 @testset "linear algebra" begin
+  @test one(t2) * t2 == t2
+  @test t2 * one(t2) == t2
+  @test t2 + zero(t2) == t2
+
   @test canonicalize(top3) === canonicalize(top2 * u"s")
   @test LinearAlgebra.det(SHO_A) == +1.0*u"s^-2"
   @test exp(SHO_A * 2π*u"s") ≈ Identity_A
