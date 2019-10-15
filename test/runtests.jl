@@ -1,10 +1,12 @@
 using Test
 using StaticArrays
 using Unitful
+import LinearAlgebra
 
 import UnitfulLinearAlgebra
-using UnitfulLinearAlgebra: TagsAlongAxis, TagsOuterProduct, TaggedTensor, TTensor, get_tag
+using UnitfulLinearAlgebra: TagsAlongAxis, TagsOuterProduct, TaggedTensor, TTensor, get_tag, canonicalize
 
+@testset "all" begin
 
 UX = (u"m", u"m/s")
 UXdot = UX ./ u"s"
@@ -58,9 +60,33 @@ end
   @test (t1' * t2')' == (t2 * t1)
 end
 
-@testset "continuous-time LTI system"
-  @test UnitfulLinearAlgebra.is_endomorphic(get_tag(t2)) == false
-  @test UnitfulLinearAlgebra.is_endomorphic(t2 * 1u"s") == true
+@testset "continuous-time LTI system" begin
+  @test UnitfulLinearAlgebra.is_endomorphic(top2) == false
+  @test UnitfulLinearAlgebra.is_endomorphic(top2 * u"s") == true
   # TODO decide if we want this behavior
   @test UnitfulLinearAlgebra.is_endomorphic(t2 * 1u"hr") == true
+end
+
+SHO_A = TTensor(top2,
+  @SArray [
+    +0.0 +1.0;
+    -1.0 +0.0
+  ]
+)
+
+top3 = TagsOuterProduct(Tuple{taa_UX, taa_UXinv})
+
+Identity_A = TTensor(top3,
+  @SArray [
+    1 0;
+    0 1
+  ]
+)
+
+@testset "linear algebra" begin
+  @test canonicalize(top3) === canonicalize(top2 * u"s")
+  @test LinearAlgebra.det(SHO_A) == +1.0*u"s^-2"
+  @test exp(SHO_A * 2π*u"s") ≈ Identity_A
+end
+
 end
