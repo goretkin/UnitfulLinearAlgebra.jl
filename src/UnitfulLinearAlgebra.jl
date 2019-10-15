@@ -28,15 +28,13 @@ function LinearAlgebra.dot(v1::TagsAlongAxis{UNITS1}, v2::TagsAlongAxis{UNITS2})
   return unit(s)
 end
 
-# TODO consider using (Holy-) Traits
-Multipliable = Union{Number, FreeUnits}
 
-function Base.:*(a::Multipliable, v::TagsAlongAxis{UNITS}) where {UNITS}
+function Base.:*(a::FreeUnits, v::TagsAlongAxis{UNITS}) where {UNITS}
   return TagsAlongAxis{map(u -> a * u, UNITS)}()
 end
 
 
-function Base.:*(v::TagsAlongAxis{UNITS}, a::Multipliable) where {UNITS}
+function Base.:*(v::TagsAlongAxis{UNITS}, a::FreeUnits) where {UNITS}
   # field multiplication should be commutative, but maintain multipliation order anyway.
   return TagsAlongAxis{map(u -> u * a, UNITS)}()
 end
