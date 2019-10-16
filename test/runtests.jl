@@ -3,22 +3,19 @@ using StaticArrays
 using Unitful
 import LinearAlgebra
 
+import LinearAlgebra: dot
+
 import UnitfulLinearAlgebra
 using UnitfulLinearAlgebra: TagsAlongAxis, TagsOuterProduct, TaggedTensor, TTensor, get_tag, canonicalize
+const ULA = UnitfulLinearAlgebra
 
 @testset "all" begin
 
 UX = (u"m", u"m/s")
-UXdot = UX ./ u"s"
-
-UXinv = map(inv, UX)
-
-TX = map(typeof, UX)
-TXdot = map(typeof, UXdot)
 
 taa_UX = TagsAlongAxis{UX}()
-taa_UXinv = TagsAlongAxis{UXinv}()
-taa_UXdot = TagsAlongAxis{UXdot}()
+taa_UXinv = ULA.dual(taa_UX)
+taa_UXdot = taa_UX / u"s"
 
 @testset "TagsAlongAxis" begin
   @test size(taa_UX) == (2, )
@@ -27,6 +24,7 @@ taa_UXdot = TagsAlongAxis{UXdot}()
 
   @test 2 * (u"m" * taa_UXdot) == (2 * u"m") * taa_UXdot
   @test typeof(u"m" * taa_UXdot) <: TagsAlongAxis
+  @test dimension(dot(taa_UX, taa_UXinv)) == Unitful.NoDims
 end
 
 top1 = TagsOuterProduct(Tuple{taa_UX, })
@@ -73,10 +71,10 @@ end
 end
 
 @testset "continuous-time LTI system" begin
-  @test UnitfulLinearAlgebra.is_endomorphic(top2) == false
-  @test UnitfulLinearAlgebra.is_endomorphic(top2 * u"s") == true
+  @test ULA.is_endomorphic(top2) == false
+  @test ULA.is_endomorphic(top2 * u"s") == true
   # TODO decide if we want this behavior
-  @test UnitfulLinearAlgebra.is_endomorphic(t2 * 1u"hr") == true
+  @test ULA.is_endomorphic(t2 * 1u"hr") == true
 end
 
 SHO_A = TTensor(top2,

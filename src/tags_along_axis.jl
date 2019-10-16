@@ -39,3 +39,10 @@ end
 function Base.:/(v::TagsAlongAxis{UNITS}, a::FreeUnits) where {UNITS}
   return TagsAlongAxis{map(u -> u / a, UNITS)}()
 end
+
+"""
+Unitful.dimension(dot(dual(v), v)) == Unitful.NoDims
+"""
+function dual(v::TagsAlongAxis{UNITS}) where {UNITS}
+  return TagsAlongAxis{map(inv, UNITS)}()
+end

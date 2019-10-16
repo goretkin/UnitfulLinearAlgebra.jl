@@ -73,3 +73,15 @@ Definition 3.5 from Hart Multidimensional Analysis
 function is_endomorphic(m::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
   return canonicalize(m) == canonicalize(m^2)
 end
+
+"""
+oneleft(x) * x = x
+"""
+function oneleft(m::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
+end
+
+"""
+x * oneright(x) = x
+"""
+function oneright(m::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
+end
