@@ -58,7 +58,7 @@ end
 
 # integer power. Generic fallbacks use `power_by_squaring`, which assumes type closure under `*`, which is a property that Unitful matrices do not have.
 # TODO factorize so that this can be a O(1) operation
-function Base.:^(m::TagsOuterProduct{Tuple{TAA1, TAA2}}, pow::Integer) where {TAA1, TAA2}
+function Base.:^(m::TagsOuterProduct)
   @assert pow > 0 # TODO generalize for pow <= 0
   acc = m
   for i = 2:pow
@@ -70,18 +70,33 @@ end
 """
 Definition 3.5 from Hart Multidimensional Analysis
 """
-function is_endomorphic(m::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
+function is_endomorphic(m::TagsOuterProduct)
   return canonicalize(m) == canonicalize(m^2)
 end
 
 """
 oneleft(x) * x = x
 """
-function oneleft(m::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
+function oneleft(::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
+  return TAA1 *  dual(TAA1)'
 end
 
 """
 x * oneright(x) = x
 """
-function oneright(m::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
+function oneright(::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
+  return dual(TAA2) * TAA2'
+end
+
+struct NoCommutativeIdentityElement{E} <: Exception
+  element::E
+end
+
+Base.showerror(io::IO, e::NoCommutativeIdentityElement) = print(io, e.element, " does not have an identity element. Try `oneright` or `oneleft`")
+
+function Base.one(m::TagsOuterProduct)
+  if canonicalize(oneright(m)) == canonicalize(oneleft(m))
+    return canonicalize(oneright(m))
+  end
+  throw(NoCommutativeIdentityElement(m))
 end

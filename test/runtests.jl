@@ -33,6 +33,8 @@ top2 = TagsOuterProduct(Tuple{taa_UXdot, taa_UXinv})
 @testset "TagsOuterProduct" begin
   @test top1[1] == u"m"
   @test top2[1,1] == u"s^-1"
+  @test one(top2) * top2 == top2
+  @test top2 * one(top2) == top2
 end
 
 @testset "outer product construction" begin
