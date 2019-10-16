@@ -30,17 +30,39 @@ end
 top1 = TagsOuterProduct(Tuple{taa_UX, })
 top2 = TagsOuterProduct(Tuple{taa_UXdot, taa_UXinv})
 
+@testset "outer product construction" begin
+  top2_ = taa_UXdot * taa_UXinv'
+  @test top2_ === top2
+end
+
+U1 = Unitful.FreeUnits{(),NoDims,nothing}()
+
 @testset "TagsOuterProduct" begin
   @test top1[1] == u"m"
   @test top2[1,1] == u"s^-1"
   @test one(top2) * top2 == top2
   @test top2 * one(top2) == top2
+  @test top2 * inv(top2) == one(top2)
+  @test inv(top2) * top2 == one(top2)
+  @test top2^0 == one(top2)
+  @test inv(top2) == top2^-1
+  taa = TagsAlongAxis{(U1, u"s^-1")}()
+  top = taa * ULA.dual(taa)'
+  @test ULA.factor_endomorphic(top2) == (top, u"s^-1", true)
+  @test ULA.factor_endomorphic(top) == (top, U1, true)
 end
 
-@testset "outer product construction" begin
-  top2_ = taa_UXdot * taa_UXinv'
-  @test top2_ === top2
+
+# Matrix Tag from https://www.georgehart.com/research/answer1.html
+top_P = TagsAlongAxis{(U1, U1)}() * TagsAlongAxis{(U1, u"m/s")}()'
+
+@testset "TagsOuterProduct not commutative" begin
+  @test_throws ULA.NoCommutativeIdentityElement one(top_P)
+  @test top_P * inv(top_P) == ULA.oneleft(top_P)
+  @test inv(top_P) * top_P  == ULA.oneright(top_P)
+  @test ULA.factor_endomorphic(top_P) == (top_P, U1, false)
 end
+
 
 t1 = TTensor(top1,
   @SArray rand(2,)
@@ -76,7 +98,7 @@ end
   @test ULA.is_endomorphic(top2) == false
   @test ULA.is_endomorphic(top2 * u"s") == true
   # TODO decide if we want this behavior
-  @test ULA.is_endomorphic(t2 * 1u"hr") == true
+  @test ULA.is_endomorphic(top2 * u"hr") == false
 end
 
 SHO_A = TTensor(top2,

@@ -58,14 +58,24 @@ end
 
 # integer power. Generic fallbacks use `power_by_squaring`, which assumes type closure under `*`, which is a property that Unitful matrices do not have.
 # TODO factorize so that this can be a O(1) operation
-function Base.:^(m::TagsOuterProduct)
-  @assert pow > 0 # TODO generalize for pow <= 0
-  acc = m
-  for i = 2:pow
+function power(m::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}, p::Real) where {TAA1, TAA2}
+  @assert p >= 0 # TODO generalize for pow < 0
+  acc = one(m)
+  for i = 1:p
     acc = acc * m
   end
   return acc
 end
+
+Base.:^(m::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}, p::Real) where {TAA1, TAA2} = power(m, p)
+
+# avoid method ambiguity with `^(A::AbstractArray{T,2} where T, p::Integer) in LinearAlgebra`
+Base.:^(m::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}, p::Integer) where {TAA1, TAA2} = power(m, p)
+
+# make sure literal_pow also doesn't use fallback.
+Base.literal_pow(::typeof(^), x::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}, ::Val{p}) where {TAA1, TAA2, p} = x^p
+# avoid method ambiguity
+Base.literal_pow(::typeof(^), x::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}, ::Val{-1}) where {TAA1, TAA2, p} = power(x, -1)  # TODO avoid naming
 
 """
 Definition 3.5 from Hart Multidimensional Analysis
@@ -73,6 +83,27 @@ Definition 3.5 from Hart Multidimensional Analysis
 function is_endomorphic(m::TagsOuterProduct)
   return canonicalize(m) == canonicalize(m^2)
 end
+
+"""
+Factor m = c * e where e is endomorphic, if possible
+return (taa, c, is_endomorphic(e)) where m = c * e
+"""
+# TODO: this kind of looks like an eigen decomposition: TAA * c * dual(TAA)'
+function factor_endomorphic(m::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
+  if canonicalize(m) != m
+    return factor_endomorphic(canonicalize(m))
+  end
+
+  d = dual(TAA2) ./ TAA1
+  maybe_factor = first(d)
+  if all(maybe_factor .== d)
+    @assert dual(TAA2) == TAA1 * maybe_factor
+    (TAA1 * dual(TAA1)', inv(maybe_factor), true)
+  else
+    (m, Unitful.FreeUnits{(),Unitful.NoDims,nothing}(), false)
+  end
+end
+
 
 """
 oneleft(x) * x = x
@@ -94,9 +125,18 @@ end
 
 Base.showerror(io::IO, e::NoCommutativeIdentityElement) = print(io, e.element, " does not have an identity element. Try `oneright` or `oneleft`")
 
+"""
+Only defined for c * e where `is_endomorphic(e)` is true and c is a scalar.
+"""
 function Base.one(m::TagsOuterProduct)
   if canonicalize(oneright(m)) == canonicalize(oneleft(m))
     return canonicalize(oneright(m))
   end
   throw(NoCommutativeIdentityElement(m))
+end
+
+
+# inv(m) * m ≠ m * inv(m) in general
+function Base.inv(::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
+  dual(TAA2) * dual(TAA1)'
 end
