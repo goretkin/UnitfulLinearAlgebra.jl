@@ -33,6 +33,9 @@ function canonicalize(m::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
   return (TAA1 * inv(a))  * (TAA2 * a)'
 end
 
+Base.adjoint(::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}) where {TAA1, TAA2} = TAA2 * TAA1'
+Base.transpose(m::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}) where {TAA1, TAA2} = adjoint(m)
+
 # matrix-vector product
 function Base.:*(m::TagsOuterProduct{Tuple{mTAA1, mTAA2}}, v::TagsOuterProduct{Tuple{vTAA}}) where {mTAA1, mTAA2, vTAA}
   taa = mTAA1 * dot(mTAA2, vTAA)
@@ -57,15 +60,31 @@ function Base.:*(s::FreeUnits, m::TagsOuterProduct{Tuple{mTAA1, mTAA2}}) where {
 end
 
 # integer power. Generic fallbacks use `power_by_squaring`, which assumes type closure under `*`, which is a property that Unitful matrices do not have.
-# TODO factorize so that this can be a O(1) operation
-function power(m::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}, p::Integer) where {TAA1, TAA2}
+function power_by_multiplication(m::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}, p::Integer) where {TAA1, TAA2}
   ms = if p >= 0; m; else; inv(m); end
 
-  acc = one(ms)
+  # because if `one` doesn't exist, then the power is not defined unless p==0 or p==1.
+  # Do this so a Unitful.DimensionError gets triggered in the loop
+  acc = oneright(ms)
+
+  if p == 0
+    return one(m)   # raise an error if `one` not defined instead of guessing.
+  end
+
   for i = 1:abs(p)
-    acc = acc * ms
+    acc = ms * acc
   end
   return acc
+end
+
+function power(m::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}, p::Real) where {TAA1, TAA2}
+  (e, c, f) = factor_endomorphic(m)
+  if f
+    return e * c^p
+  else
+    # TODO if InexactError is thrown, really is a DimensionError
+    power_by_multiplication(m, Integer(p)) # will throw an error for most p.
+  end
 end
 
 Base.:^(m::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}, p::Real) where {TAA1, TAA2} = power(m, p)
@@ -138,6 +157,8 @@ end
 
 
 # inv(m) * m ≠ m * inv(m) in general
-function Base.inv(::TagsOuterProduct{Tuple{TAA1, TAA2}}) where {TAA1, TAA2}
+function Base.inv(::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}) where {TAA1, TAA2}
   dual(TAA2) * dual(TAA1)'
 end
+
+Base.sqrt(m::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}) where {TAA1, TAA2} = m^(1//2)

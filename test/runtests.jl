@@ -45,11 +45,13 @@ U1 = Unitful.FreeUnits{(),NoDims,nothing}()
   @test top2 * inv(top2) == one(top2)
   @test inv(top2) * top2 == one(top2)
   @test top2^0 == one(top2)
-  @test inv(top2) == top2^-1
+  @test top2^1 == top2
+  @test top2^-1 == inv(top2)
   taa = TagsAlongAxis{(U1, u"s^-1")}()
   top = taa * ULA.dual(taa)'
   @test ULA.factor_endomorphic(top2) == (top, u"s^-1", true)
   @test ULA.factor_endomorphic(top) == (top, U1, true)
+  @test sqrt(top2) * sqrt(top2) == top2
 end
 
 
@@ -58,9 +60,18 @@ top_P = TagsAlongAxis{(U1, U1)}() * TagsAlongAxis{(U1, u"m/s")}()'
 
 @testset "TagsOuterProduct not commutative" begin
   @test_throws ULA.NoCommutativeIdentityElement one(top_P)
+  @test_throws ULA.NoCommutativeIdentityElement top_P^0
+  @test top_P^1 == top_P
+  @test_throws ULA.NoCommutativeIdentityElement top_P^0.0
+  @test top_P^1.0 == top_P
+  @test_throws Unitful.DimensionError top_P^2
+  @test_throws Unitful.DimensionError top_P^2.0
   @test top_P * inv(top_P) == ULA.oneleft(top_P)
   @test inv(top_P) * top_P  == ULA.oneright(top_P)
   @test ULA.factor_endomorphic(top_P) == (top_P, U1, false)
+  @test collect(top_P)' == top_P'
+  @test ULA.oneleft(top_P')' == ULA.oneright(top_P)
+  @test ULA.oneright(top_P')' == ULA.oneleft(top_P)
 end
 
 
