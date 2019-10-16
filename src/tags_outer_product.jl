@@ -58,11 +58,12 @@ end
 
 # integer power. Generic fallbacks use `power_by_squaring`, which assumes type closure under `*`, which is a property that Unitful matrices do not have.
 # TODO factorize so that this can be a O(1) operation
-function power(m::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}, p::Real) where {TAA1, TAA2}
-  @assert p >= 0 # TODO generalize for pow < 0
-  acc = one(m)
-  for i = 1:p
-    acc = acc * m
+function power(m::TagsOuterProduct{Tuple{TAA1, TAA2}, 2}, p::Integer) where {TAA1, TAA2}
+  ms = if p >= 0; m; else; inv(m); end
+
+  acc = one(ms)
+  for i = 1:abs(p)
+    acc = acc * ms
   end
   return acc
 end
