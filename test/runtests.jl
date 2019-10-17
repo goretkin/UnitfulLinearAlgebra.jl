@@ -128,6 +128,8 @@ Identity_A = TTensor(top3,
   ]
 )
 
+isapproxkw(a, b, atol) = isapprox(a, b, atol=atol)
+
 @testset "linear algebra" begin
   @test one(t2) * t2 == t2
   @test t2 * one(t2) == t2
@@ -135,7 +137,8 @@ Identity_A = TTensor(top3,
 
   @test canonicalize(top3) === canonicalize(top2 * u"s")
   @test LinearAlgebra.det(SHO_A) == +1.0*u"s^-2"
-  @test exp(SHO_A * 2π*u"s") ≈ Identity_A
+  @test all(isapproxkw.(exp(SHO_A * 2π*u"s"), Identity_A, ULA.constant_like(get_tag(Identity_A), 1e-15)))
+  #@test all(isapproxkw.(exp(SHO_A * (2π/60*u"minute")), Identity_A, constant_like(get_tag(Identity_A), 1e-15)))
 end
 
 end
