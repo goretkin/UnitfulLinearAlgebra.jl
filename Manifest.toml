@@ -1,5 +1,10 @@
 # This file is machine-generated - editing it directly is not advised
 
+[[ConstructionBase]]
+git-tree-sha1 = "a2a6a5fea4d6f730ec4c18a76d27ec10e8ec1c50"
+uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
+version = "1.0.0"
+
 [[Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 
@@ -15,7 +20,7 @@ uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
 [[Unitful]]
-deps = ["LinearAlgebra", "Random"]
-path = "/Users/goretkin/.julia/dev/Unitful"
+deps = ["ConstructionBase", "LinearAlgebra", "Random"]
+git-tree-sha1 = "2b643523d52fc9fb4fe0729e6561d066055d58d8"
 uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
-version = "0.17.0"
+version = "1.5.0"
